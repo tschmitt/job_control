@@ -1,35 +1,35 @@
 {
     "variables": {},
 	   "steps": {
-        "100": {"type": "os", "name": "temp table refresh", "dependencies": [], "task": "edb-psql -d prism_dev -a -w -c 'select version();'"}, 
+        "100": {"type": "os", "name": "db test 1", "dependencies": [], "task": "edb-psql -d prism_dev -a -w -c 'select version();'"}, 
         "200": {
       			"type": "os",
       			"task": "python step1.py",
-            "name": "compchar refresh", 
+            "name": "step 200", 
             "dependencies": []
         }, 
         "300": {
       			"type": "os",
       			"task": "python step2.py",
-            "name": "char refresh", 
+            "name": "step 300", 
             "dependencies": []
         }, 
         "400": {
       			"type": "os",
       			"task": "python step2.py", 
-            "name": "MV refreshes", 
+            "name": "be creative here", 
             "dependencies": ["100"]
         },
         "500": {
             "type": "os",
 			       "task": "ls -alh", 
-            "name": "date_test", 
+            "name": "ls_test", 
             "dependencies": ["100","300"]
         },	
         "600": {
 			      "type": "os",
             "task": "edb-psql -d prism_dev -a -w -c 'select version();'", 
-            "name": "psql test", 
+            "name": "db test 2", 
             "dependencies": []
         },			
         "9999": {

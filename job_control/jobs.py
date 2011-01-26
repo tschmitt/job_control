@@ -12,60 +12,54 @@ DESCRIPTION
         
 SAMPLE CONFIG FILE        
 {
-    "variables": {
-        "tableset": "A"
-    },
-    "steps": {
-        "100": {
-            "type": "os",
-            "task": "python step1.py",
-            "name": "temp table refresh", 
-            "dependencies": []
-        }, 
+    "variables": {},
+       "steps": {
+        "100": {"type": "os", "name": "db test 1", "dependencies": [], "task": "edb-psql -d prism_dev -a -w -c 'select version();'"}, 
         "200": {
-            "type": "os",
-            "task": "python step1.py",
-            "name": "compchar refresh", 
+                  "type": "os",
+                  "task": "python step1.py",
+            "name": "step 200", 
             "dependencies": []
         }, 
         "300": {
-            "type": "os",
-            "task": "python step2.py",
-            "name": "char refresh", 
+                  "type": "os",
+                  "task": "python step2.py",
+            "name": "step 300", 
             "dependencies": []
         }, 
         "400": {
-            "type": "os",
-            "task": "python step2.py", 
-            "name": "MV refreshes $tableset tables", 
+                  "type": "os",
+                  "task": "python step2.py", 
+            "name": "be creative here", 
             "dependencies": ["100"]
         },
         "500": {
             "type": "os",
-            "task": "ls -alh", 
-            "name": "date_test", 
+                   "task": "ls -alh", 
+            "name": "ls_test", 
             "dependencies": ["100","300"]
         },    
         "600": {
-            "type": "os",
+                  "type": "os",
             "task": "edb-psql -d prism_dev -a -w -c 'select version();'", 
-            "name": "psql test", 
+            "name": "db test 2", 
             "dependencies": []
         },            
         "9999": {
-            "type": "internal",
-            "task": "send_mail",
+                  "type": "internal",
+                  "task": "send_mail",
             "name": "job_complete", 
-            "dependencies": "ALL",
-            "detail": {
-                "mail_to": "tschmitt@schmittworks.com",
-                "mail_from": "job_control@schmittworks.com",
-                "mail_subject": "Job job1.conf.json complete",
-                "mail_body": ""
-            }
-        }        
+                  "dependencies": "ALL",
+                  "detail": {
+                      "mail_to": "tschmitt@schmittworks.com",
+                              "mail_from": "job_control@schmittworks.com.com",
+                              "mail_subject": "Job job1.conf.json complete",
+                              "mail_body": ""
+                          }
+             }        
     }
 }
+
 
 
 AUTHOR
