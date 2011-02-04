@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """
 SYNOPSIS
@@ -14,7 +14,7 @@ DESCRIPTION
     Steps may be local OS commands or email.
     Logs for each step will be created in:
         %path/logs/
-    A persistence picle file is also created at the completion of the job.
+    A persistence pickle file is also created at the completion of the job.
         This is for future functionality.
         
     Parameters:
@@ -71,7 +71,7 @@ def main ():
     global options, args, job
     
     MAIL_TO = 'tschmitt@schmittworks.com'
-    MAIL_FROM = 'job_control@schmittworks.com.com'
+    MAIL_FROM = 'job_control@schmittworks.com'
         
     #Create the job instance
     job = jobs.Job(options.path, options.config)

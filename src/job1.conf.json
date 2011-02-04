@@ -1,35 +1,35 @@
 {
     "variables": {},
 	   "steps": {
-        "100": {"type": "os", "name": "db test 1", "dependencies": [], "task": "edb-psql -d prism_dev -a -w -c 'select version();'"}, 
+        "100": {"type": "os", "name": "df test", "dependencies": [], "task": "df -h"}, 
         "200": {
-      			"type": "os",
-      			"task": "python step1.py",
+      		"type": "os",
+      		"task": "python step1.py",
             "name": "step 200", 
             "dependencies": []
         }, 
         "300": {
-      			"type": "os",
-      			"task": "python step2.py",
+      		"type": "os",
+      		"task": "python step2.py",
             "name": "step 300", 
             "dependencies": []
         }, 
         "400": {
-      			"type": "os",
-      			"task": "python step2.py", 
+      		"type": "os",
+      		"task": "python step2.py", 
             "name": "be creative here", 
             "dependencies": ["100"]
         },
         "500": {
             "type": "os",
-			       "task": "ls -alh", 
+			"task": "ls -alh", 
             "name": "ls_test", 
             "dependencies": ["100","300"]
         },	
         "600": {
-			      "type": "os",
-            "task": "edb-psql -d prism_dev -a -w -c 'select version();'", 
-            "name": "db test 2", 
+			"type": "os",
+            "task": "date", 
+            "name": "date test", 
             "dependencies": []
         },			
         "9999": {

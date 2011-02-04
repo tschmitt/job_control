@@ -10,58 +10,6 @@ DESCRIPTION
     The job class also includes all the step functionality, which may be moved
         to a steps module and step class at a later date.
         
-SAMPLE CONFIG FILE        
-{
-    "variables": {},
-       "steps": {
-        "100": {"type": "os", "name": "db test 1", "dependencies": [], "task": "edb-psql -d prism_dev -a -w -c 'select version();'"}, 
-        "200": {
-                  "type": "os",
-                  "task": "python step1.py",
-            "name": "step 200", 
-            "dependencies": []
-        }, 
-        "300": {
-                  "type": "os",
-                  "task": "python step2.py",
-            "name": "step 300", 
-            "dependencies": []
-        }, 
-        "400": {
-                  "type": "os",
-                  "task": "python step2.py", 
-            "name": "be creative here", 
-            "dependencies": ["100"]
-        },
-        "500": {
-            "type": "os",
-                   "task": "ls -alh", 
-            "name": "ls_test", 
-            "dependencies": ["100","300"]
-        },    
-        "600": {
-                  "type": "os",
-            "task": "edb-psql -d prism_dev -a -w -c 'select version();'", 
-            "name": "db test 2", 
-            "dependencies": []
-        },            
-        "9999": {
-                  "type": "internal",
-                  "task": "send_mail",
-            "name": "job_complete", 
-                  "dependencies": "ALL",
-                  "detail": {
-                      "mail_to": "tschmitt@schmittworks.com",
-                              "mail_from": "job_control@schmittworks.com.com",
-                              "mail_subject": "Job job1.conf.json complete",
-                              "mail_body": ""
-                          }
-             }        
-    }
-}
-
-
-
 AUTHOR
 
     Terry Schmitt <tschmitt@schmittworks.com>
@@ -76,7 +24,7 @@ import os
 import pickle
 import shlex
 import signal
-import simplejson as json
+import json
 import smtplib
 from string import Template
 from subprocess import Popen, STDOUT
@@ -159,10 +107,6 @@ class Job(object):
             #Check for ALL dependency and set
             if self.steps[step]['dependencies'] == 'ALL':
                 self.steps[step]['dependencies'] = self.get_all_dependencies(step)
-            #Build args
-            self.steps[step]['args'] = shlex.split(self.steps[step]['task'])
-            if 'detail' in self.steps[step]:
-                self.steps[step]['args'].append(self.steps[step]['detail'])
             #Replace variables in config
             d =  self.config['variables']
             #check these values for variable replacement
@@ -171,7 +115,11 @@ class Job(object):
                 if item in self.steps[step]:
                     t = Template(self.steps[step][item])
                     self.steps[step][item] = t.substitute(d)
-
+            #Build args
+            self.steps[step]['args'] = shlex.split(self.steps[step]['task'])
+            if 'detail' in self.steps[step]:
+                self.steps[step]['args'].append(self.steps[step]['detail'])
+                
         #Defaults
         self.start_time = datetime.today()
         self.stop_time = None
