@@ -24,15 +24,16 @@ DESCRIPTION
                     (Default = ./)
         -c, --config
                 Configuration file name.
+                Convention: <name>.conf.json
         -d, --delay
                 Length of sleep delay (seconds) between main loop iterations.
                     (Default = 1 )
         -s, --simulate
-                Simulates the execution of a job. Only designated steps will execute.
-                    (Default = True)
+                Simulates the execution of a job. No steps will be executed, but the entire job flow will be tested.
+                    (Default = False)
         -v, --verbose
                 Prints extra output.
-                        (Default = False)
+                        (Default = True)
 
 EXAMPLES
 
@@ -58,7 +59,7 @@ AUTHOR
 
 VERSION
 
-    1.0.001
+    1.5.000
     
 """
 
@@ -76,13 +77,15 @@ def main ():
 
     global options, args, job
     
-    MAIL_TO = 'tschmitt@schmittworks.com'
-    MAIL_FROM = 'job_control@schmittworks.com'
+    MAIL_TO = 'someone@somewhere.com'
+    MAIL_FROM = 'job_control@somewhere.com'
         
     #Create the job instance
-    job = jobs.Job(options.path, options.config)
+    job = jobs.Job(options.path, options.config, options.simulate)
         
     print job.start_time, 'JOB START'
+    if options.simulate:
+        print '*** SIMULATE MODE - Only flagged steps will be executed ***'
     
     #Main job control loop. Runs until all steps are complete or a failure occurs
     while job.runnables() or job.running():
@@ -93,10 +96,9 @@ def main ():
         job.process_queue(True)
             
         #Check processes looking for completed steps
-        job.monitor_processes(True)
+        job.monitor_processes()
         
         #Sleep between iterations to prevent cpu abuse.
-        #This does not need to be an event loop.
         time.sleep(options.delay)
         
     job.stop_time = datetime.today()
@@ -134,7 +136,7 @@ if __name__ == '__main__':
     try:
         start_time = time.time()
         parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(),
-                usage=globals()['__doc__'], version='1.0.001')
+                usage=globals()['__doc__'], version='1.5.000')
         parser.add_option ('-p', '--path', action='store', help='file path',
                 default='./')
         parser.add_option ('-c', '--config', action='store',

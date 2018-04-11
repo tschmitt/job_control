@@ -16,7 +16,7 @@ AUTHOR
 
 VERSION
 
-    1.0.000
+    1.5.000
     
 """
 
@@ -34,11 +34,11 @@ from copy import deepcopy
 from collections import deque
 
 #Not used but may use later for converting datetime
-def encode_custom(obj):
-    if isinstance(obj, datetime):
-        return obj.strftime('%Y-%m-%dT%H:%M:%S')
-    else:
-        return json.JSONEncoder.default(obj) 
+#def encode_custom(obj):
+#    if isinstance(obj, datetime):
+#        return obj.strftime('%Y-%m-%dT%H:%M:%S')
+#    else:
+#        return json.JSONEncoder.default(obj)
 
 class Error(Exception):
     '''
@@ -62,12 +62,13 @@ class Job(object):
     '''
 
 
-    def __init__(self, path, config_file):
+    def __init__(self, path, config_file, simulate):
         '''
         Constructor
         '''
         self.path = path
         self.config_file = config_file
+        self.simulate = simulate
         #Build paths
         self.config_path = os.path.join(self.path, self.config_file)
         self.data_path = os.path.join(self.path, '%s.%s' %
@@ -77,7 +78,7 @@ class Job(object):
             os.makedirs(self.logpath)
         
         #Constants
-        self.STEP_STATUS_TEMPL = {'status': 'waiting', 'resultcode': None, 'queued_time':  None, 'start_time': None, 'stop_time': None, 'duration': 0}
+        self.STEP_STATUS_TEMPL = {'status': 'waiting', 'resultcode': None, 'queued_time':  None, 'start_time': None, 'stop_time': None, 'duration': 0, 'simulate': self.simulate}
         self.STATUSES = {
                      'waiting':  {'name': 'waiting', 'runnable': True, 'running': False, 'description': 'Step has not been queued yet'},
                      'queued':   {'name': 'queued', 'runnable': True, 'running': False, 'description': 'Step is in the queue and ready to run'},
@@ -86,10 +87,10 @@ class Job(object):
                      'disabled': {'name': 'disabled', 'runnable': False, 'running': False, 'description': 'Step has been disabled and will not be run'},
                      'failed':   {'name': 'failed', 'runnable': False, 'running': False, 'description': 'Step failed'},
                      'canceled': {'name': 'canceled', 'runnable': False, 'running': False, 'description': 'Step was canceled without being started. Most likely due to a dependency that failed. This step may be rerun'},
-                     'aborted':  {'name': 'aborted', 'runnable': False, 'running': False, 'description': 'Step was aborted while it was running. Most likely due to Ctrl-C or a undandled exception. This step will likely require research before rerunning'}
+                     'aborted':  {'name': 'aborted', 'runnable': False, 'running': False, 'description': 'Step was aborted while it was running. Most likely due to Ctrl-C or a unhandled exception. This step will likely require research before rerunning'}
                          }
         self.STEP_TYPES = {
-                    'os': {'name': 'os', 'description': 'Spawns a new ayncronous process and execute the os level command with parameters'},
+                    'os': {'name': 'os', 'description': 'Spawns a new asynchronous process and execute the os level command with parameters'},
                     'internal': {'name': 'internal', 'description': 'Pre configured steps for routine functionality'}
                       }
         self.TASK_TYPES = {
@@ -119,7 +120,10 @@ class Job(object):
             self.steps[step]['args'] = shlex.split(self.steps[step]['task'])
             if 'detail' in self.steps[step]:
                 self.steps[step]['args'].append(self.steps[step]['detail'])
-                
+            #Check for disabled steps
+            if not self.steps[step]['enabled']:
+                self.steps[step]['job_status']['simulate'] = True
+
         #Defaults
         self.start_time = datetime.today()
         self.stop_time = None
@@ -129,7 +133,7 @@ class Job(object):
         self.completed = [] #Sucessful steps
         self.failed = [] #Failed steps
 
-    def cancel_children(self, step):
+    def cancel_children(self):
         '''
             Cancels the dependents of a step
         '''
@@ -165,14 +169,14 @@ class Job(object):
         #Set step status
         self.steps[step]['job_status']['status'] = 'aborted'
         #Cancel dependents
-        self.cancel_children(step)
+        self.cancel_children()
                       
                 
     def dependencies_met(self, step):
         '''
             Checks that the dependency steps are complete
         '''
-        if self.steps[step]['dependencies'] == None:
+        if self.steps[step]['dependencies'] is None:
             #No dependencies
             return True
         else:
@@ -238,39 +242,55 @@ class Job(object):
         except Exception:
             raise
         
-    def monitor_processes(self, verbose):
+    def monitor_processes(self):
         '''
             Iterates over processes and cleans up after success or fail of
                 each process.
         '''
+
         for step in self.processes:
             #If complete
             if step not in self.completed and step not in self.failed:
-                results = self.processes[step]['process'].poll()
-                if results != None: #step is finished
-                    #Close the out file
-                    self.processes[step]['out'].close()
-                    if results == 0:
-                        result_str = 'COMPLETE'
-                    else:
-                        result_str = 'FAILED'
-                    
-                    #Append to completed and update status
+                step_complete = False
+                if not self.simulate and not self.steps[step]['job_status']['simulate']:
+                    results = self.processes[step]['process'].poll()
+
+                    if results is not None: #step is finished
+                        #Close the out file
+                        self.processes[step]['out'].close()
+                        if not results:
+                            result_str = 'COMPLETE'
+                        else:
+                            result_str = 'FAILED'
+
+                        #Append to completed and update status
+                        self.complete_step(step, results)
+                        step_complete = True
+                else:
+                    result_str = 'COMPLETE'
+                    results = 0
                     self.complete_step(step, results)
+                    step_complete = True
+
+                if step_complete:
+                    if self.simulate or self.steps[step]['job_status']['simulate']:
+                        sim_msg = '(simulated)'
+                    else:
+                        sim_msg = ''
+                    print '%s STEP %s: %s resultcode: %s duration: %s %s' % (datetime.today(), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg)
                     
-                    print '%s STEP %s: %s resultcode: %s duration: %s' % (datetime.today(), result_str, step, results, self.steps[step]['job_status']['duration'])
     def complete_step(self, step, results):
         '''
             Appends to completed and updates the status
         '''
-        if results == 0:
+        if not results:
             self.completed.append(step)
             self.steps[step]['job_status']['status'] = 'complete'
         else:
             self.failed.append(step)
             self.steps[step]['job_status']['status'] = 'failed'
             #cancel any dependent steps
-            self.cancel_children(step)   
+            self.cancel_children()
             
         #Update stats
         self.steps[step]['job_status']['resultcode'] = results  
@@ -289,9 +309,13 @@ class Job(object):
             if not self.completed:
                 print '     None'            
             for step in self.completed:
+                if self.simulate or self.steps[step]['job_status']['simulate']:
+                    sim_msg = '(simulated)'
+                else:
+                    sim_msg = ''
                 print 'Step:', step
                 print '     name:      ', self.steps[step]['name']
-                print '     status :   ', self.STATUSES[self.steps[step]['job_status']['status']]['name']
+                print '     status :   ', self.STATUSES[self.steps[step]['job_status']['status']]['name'], sim_msg
                 print '     resultcode:', self.steps[step]['job_status']['resultcode']
                 print '     start:     ', self.steps[step]['job_status']['start_time']
                 print '     stop:      ', self.steps[step]['job_status']['stop_time']
@@ -357,15 +381,18 @@ class Job(object):
             
             #Update status
             self.steps[step]['job_status']['status'] = 'running'
-            self.steps[step]['job_status']['start_time'] = datetime.today()   
+            self.steps[step]['job_status']['start_time'] = datetime.today()
+
             if self.steps[step]['type'] == 'os':
                 #Launches a new process
                 self.processes[step] = {}
-                #Create log file
-                outfile = '%s-%s.%s' % (self.config_file.split('.')[0], step, 'out')        
-                self.processes[step]['out'] = open(os.path.join(self.logpath, outfile), 'wb')
-                #Launch step
-                self.processes[step]['process'] = Popen(self.steps[step]['args'], stdout=self.processes[step]['out'], stderr=STDOUT)
+                if not self.simulate and not self.steps[step]['job_status']['simulate']:
+                    #Create log file
+                    outfile = '%s-%s.%s' % (self.config_file.split('.')[0], step, 'out')
+                    self.processes[step]['out'] = open(os.path.join(self.logpath, outfile), 'wb')
+                    #Launch step
+                    self.processes[step]['process'] = Popen(self.steps[step]['args'], stdout=self.processes[step]['out'], stderr=STDOUT)
+
                 if verbose:
                     print '%s STEP %s: %s' % (datetime.today(), 'SPAWNED', step)
             elif self.steps[step]['type'] == 'internal':
@@ -373,15 +400,23 @@ class Job(object):
                     if verbose:
                         print '%s STEP %s: %s' % (datetime.today(), 'EXECUTED', step)
                     #Send email
-                    results = self.send_mail(**self.steps[step]['args'][1])
-                    #If the returned dictinary has members, set to 1
+                    if not self.simulate and not self.steps[step]['job_status']['simulate']:
+                        results = self.send_mail(**self.steps[step]['args'][1])
+                    else:
+                        results = 0
+
+                    #If the returned dictionary has members, set to 1
                     if results:
                         results = 1
                     else:
                         results = 0
                     self.complete_step(step, results)
+                    if self.simulate or self.steps[step]['job_status']['simulate']:
+                        sim_msg = '(simulated)'
+                    else:
+                        sim_msg = ''
                     if verbose:
-                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s' % (datetime.today(), step, results, self.steps[step]['job_status']['duration'])               
+                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (datetime.today(), step, results, self.steps[step]['job_status']['duration'], sim_msg)
             else:
                 raise InvalidTypeError(self.steps[step]['type'])
                     
@@ -423,7 +458,7 @@ class Job(object):
     def save_config(self):
         '''
             This writes the configuration to a JSON file.
-            This will probably not be used much, as it was primkarily written
+            This will probably not be used much, as it was primarily written
                 to write out the first file as a sample.
         '''
        
