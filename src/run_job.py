@@ -3,7 +3,7 @@
 """
 SYNOPSIS
 
-    run_job.py [-p, --path] [-c, --config] [-s, --sleep] [-v, --verbose]
+    run_job.py [-p, --path] [-c, --config] [-d, --delay] [-s, --simulate] [-v, --verbose]
                 [-h, --help] [--version]
     
 
@@ -18,13 +18,20 @@ DESCRIPTION
         This is for future functionality.
         
     Parameters:
-        -p, --path    The directory where the configuration files is located.
-                        The logs directory will be created here/
-                        (Default = ./)
-        -c, --config  Configuration file name.
-        -s, --sleep   Length of sleep delay (seconds) between main loop iterations.
-                        (Default = 1 )
-        -v, --verbose Prints extra output.
+        -p, --path
+                The directory where the configuration files is located.
+                The logs directory will be created here/
+                    (Default = ./)
+        -c, --config
+                Configuration file name.
+        -d, --delay
+                Length of sleep delay (seconds) between main loop iterations.
+                    (Default = 1 )
+        -s, --simulate
+                Simulates the execution of a job. Only designated steps will execute.
+                    (Default = True)
+        -v, --verbose
+                Prints extra output.
                         (Default = False)
 
 EXAMPLES
@@ -32,7 +39,7 @@ EXAMPLES
     run_job.py -c job1.conf.json
         Runs a job in the current directory with all defaults.
         
-    run_job.py -p /home/jobs/  -c job2.conf.json -s 10 -v
+    run_job.py -p /home/jobs/  -c job2.conf.json -d 10 -v -s
         Runs a job in a defined directory with custom settings.
      
 
@@ -51,10 +58,9 @@ AUTHOR
 
 VERSION
 
-    1.0.000
+    1.0.001
     
 """
-
 
 import optparse
 import os
@@ -91,7 +97,7 @@ def main ():
         
         #Sleep between iterations to prevent cpu abuse.
         #This does not need to be an event loop.
-        time.sleep(options.sleep)
+        time.sleep(options.delay)
         
     job.stop_time = datetime.today()
     job.duration = job.stop_time-job.start_time
@@ -103,7 +109,7 @@ def main ():
         return 0
     else:
         #Send an email
-        mail_subject = 'Job %s failed' % (job.config_file)
+        mail_subject = 'Job %s failed' % job.config_file
         mail_args = {
                      'mail_to': MAIL_TO,
                      'mail_from': MAIL_FROM,
@@ -128,13 +134,15 @@ if __name__ == '__main__':
     try:
         start_time = time.time()
         parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(),
-                usage=globals()['__doc__'], version='1.0.000')
+                usage=globals()['__doc__'], version='1.0.001')
         parser.add_option ('-p', '--path', action='store', help='file path',
                 default='./')
         parser.add_option ('-c', '--config', action='store',
                 help='job configuration file')
-        parser.add_option ('-s', '--sleep', action='store',
+        parser.add_option ('-d', '--delay', action='store',
                 help='Sleep seconds between iterations', type='int', default=1)
+        parser.add_option ('-s', '--simulate', action='store_true',
+                help='Simulate a job execution', default=False)
         parser.add_option ('-v', '--verbose', action='store_true',
                 default=True, help='verbose output')
         (options, args) = parser.parse_args()
@@ -142,7 +150,7 @@ if __name__ == '__main__':
         #Validation
         #Check for valid path
         if not os.path.isdir(options.path):
-            parser.error('option -p %s is not a valid directory' % (options.path))
+            parser.error('option -p %s is not a valid directory' % options.path)
         #Check for config file existence
         if not os.path.isfile(os.path.join(options.path, options.config)):
             parser.error('option -c %s file does not exist' %

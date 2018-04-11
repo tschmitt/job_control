@@ -38,8 +38,8 @@
             "name": "job_complete", 
       			"dependencies": "ALL",
       			"detail": {
-                      "mail_to": "tschmitt@schmittworks.com",
-              				"mail_from": "job_control@schmittworks.com.com",
+                      "mail_to": "someone@somewhere.com",
+              				"mail_from": "job_control@somewhere.com",
               				"mail_subject": "Job job1.conf.json complete",
               				"mail_body": ""
               			}
