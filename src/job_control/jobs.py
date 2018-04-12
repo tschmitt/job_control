@@ -26,7 +26,7 @@ CHANGES
 
 VERSION
 
-    1.6.000
+    1.7.000
     
 """
 try:
