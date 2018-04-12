@@ -1,0 +1,31 @@
+{
+    "variables": {
+        "database": "db_dev",
+        "concurrency": "2",
+        "mail_to": "someone@somewhere.com",
+        "mail_to_fail": "123456789@vtext.com",
+        "mail_from": "job_control_test@somehere.com"
+    },
+    "steps": {
+        "103": {"enabled": true, "dependencies": [], "name": "step 103", "task": "python ./test.step1.py $database", "type": "os", "comment": "test"},
+        "104": {"enabled": true, "dependencies": ["103"], "name": "step 104", "task": "python ./test.step1.py", "type": "os"},
+        "105": {"enabled": true, "dependencies": ["104"], "name": "step 105", "task": "ls -l", "type": "os"},
+        "106": {"enabled": true, "dependencies": ["105"], "name": "step 106", "task": "python ./test.step2.py", "type": "os"},
+        "107": {"enabled": true, "dependencies": [], "name": "step 107", "task": "python ./test.step2.py", "type": "os"},
+        "108": {"enabled": true, "dependencies": [], "name": "step 108", "task": "python ./test.step2.py", "type": "os"},
+        "109": {"enabled": true, "dependencies": [], "name": "step 109", "task": "python ./test.step2.py", "type": "os"},
+        "110": {"enabled": true, "dependencies": [], "name": "step 110", "task": "python ./test.step2.py", "type": "os"},
+        "111": {"enabled": true, "dependencies": [], "name": "step 111", "task": "python ./test.step1.py", "type": "os"},
+        "112": {"enabled": true, "dependencies": [], "name": "step 112", "task": "python ./test.step2.py", "type": "os"},
+        "113": {"enabled": true, "dependencies": ["111","112"], "name": "step 113", "task": "python ./test.step2.py", "type": "os"},
+        "900": {"enabled": false,
+            "dependencies": ["107"],
+            "task": "send_mail",
+            "name": "Send email for step 107", 
+            "detail": {"mail_to": "$mail_to", "mail_from": "$mail_from", "mail_subject": "Yay! Step 107 just completed on $hostname", "mail_body": ""},
+            "type": "internal"
+            },
+        "901": {"enabled": false, "dependencies": ["900"], "name": "Sleep for a while", "task": "sleep", "detail": {"seconds": "10"}, "type": "internal"},
+        "200": {"enabled": true, "dependencies": "ALL", "name": "step 200", "task": "python ./test.step2.py", "type": "os"}
+    }
+}
