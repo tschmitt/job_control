@@ -16,13 +16,14 @@ AUTHOR
 
 CHANGES
 
-    20120719    tschmitt@schmittworks.com   Added --log_path parameter to allow for customizable log file location.
-                                            Fixed bug where summary printed twice.
-    20120731    tschmitt@schmittworks.com   Added 'sleep' internal step.
-    20130521    tschmitt@schmittworks.com   Added --disable parameter to allow disabling of steps at runtime.
-    20140212    tschmitt@schmittworks.com   Added 'completed list:' to summary display.
-    20150728    tschmitt@schmittworks.com   Added mail_to_fail and smtp_relay variables
-                                            Email recipient variables can now accept a comma delimited string to send to multiple recipients
+    20120719    tschmitt@schmittworks.com           Added --log_path parameter to allow for customizable log file location.
+                                                    Fixed bug where summary printed twice.
+    20120731    tschmitt@schmittworks.com           Added 'sleep' internal step.
+    20130521    tschmitt@schmittworks.com           Added --disable parameter to allow disabling of steps at runtime.
+    20140212    tschmitt@schmittworks.com           Added 'completed list:' to summary display.
+    20150728    tschmitt@schmittworks.com           Added mail_to_fail and smtp_relay variables
+                                                    Email recipient variables can now accept a comma delimited string to send to multiple recipients
+    20180222    sara.rasmussen@clearcapital.com     Add job step name to outputs with PID
 
 VERSION
 
@@ -141,8 +142,8 @@ class Job(object):
                             'date_time_friendly': self.start_time.strftime('%c'),
                             'hostname': self.HOSTNAME,
                             'hostname_fqdn': self.HOSTNAME_FQDN,
-                            'mail_from': self.HOSTNAME + '@somwhere.com',
-                            'mail_to': 'ops@somwhere.com',
+                            'mail_from': self.HOSTNAME + '@somewhere.com',
+                            'mail_to': 'ops@somewhere.com',
                             'mail_to_fail': '',
                             'smtp_relay': 'localhost'
                                 }
@@ -562,7 +563,7 @@ class Job(object):
             
             #Gather steps
             for step in steps:
-                cur_running_msg = cur_running_msg + '%s: %s (pid: %s)' % (step, datetime.today() - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'])  + '\n'
+                cur_running_msg = cur_running_msg + '%s: %s (pid: %s) (name: %s)' % (step, datetime.today() - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'], self.steps[step]['name'])  + '\n'
             
             # Display currently running
             print '%s CURRENTLY RUNNING STEPS (%s) ***********************\n%s' % (datetime.today(), len(steps), cur_running_msg)
@@ -594,7 +595,7 @@ class Job(object):
                     self.steps[step]['job_status']['pid'] = self.processes[step]['process'].pid
 
                 if verbose:
-                    print '%s STEP %s: %s (pid: %s)' % (datetime.today(), 'SPAWNED', step, self.steps[step]['job_status']['pid'])
+                    print '%s STEP %s: %s (pid: %s) (name: %s)' % (datetime.today(), 'SPAWNED', step, self.steps[step]['job_status']['pid'], self.steps[step]['name'])
             elif self.steps[step]['type'] == 'internal':
                 if self.steps[step]['task'] == 'send_mail':
                     if verbose:
