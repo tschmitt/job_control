@@ -8,7 +8,7 @@
     },
     "steps": {
         "103": {"enabled": true, "dependencies": [], "name": "step 103", "task": "python ./test.step1.py $database", "type": "os", "comment": "test"},
-        "104": {"enabled": true, "dependencies": ["103"], "name": "step 104", "task": "python ./test.step1.py", "type": "os"},
+        "104": {"enabled": true, "dependencies": ["103"], "name": "step 104", "task": "python ./test.step3.py", "type": "os", "resultcode_allowed": [0,2]},
         "105": {"enabled": true, "dependencies": ["104"], "name": "step 105", "task": "ls -l", "type": "os"},
         "106": {"enabled": true, "dependencies": ["105"], "name": "step 106", "task": "python ./test.step2.py", "type": "os"},
         "107": {"enabled": true, "dependencies": [], "name": "step 107", "task": "python ./test.step2.py", "type": "os"},

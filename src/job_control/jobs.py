@@ -24,6 +24,7 @@ CHANGES
     20150728    tschmitt@schmittworks.com           Added mail_to_fail and smtp_relay variables
                                                     Email recipient variables can now accept a comma delimited string to send to multiple recipients
     20180222    sara.rasmussen@clearcapital.com     Add job step name to outputs with PID
+    20180419    tschmitt@schmittworks.com           Add optional step parameter, resultcode_allowed, to allow successful resultcodes other than 0
 
 VERSION
 
@@ -197,6 +198,12 @@ class Job(object):
             if step in self.disabled_steps:
                 self.steps[step]['job_status']['simulate'] = True
 
+            #Set up successful resultcodes
+            if 'resultcode_allowed' not in self.steps[step]:
+                self.steps[step]['resultcode_allowed'] = [0]
+            else:
+                self.steps[step]['resultcode_allowed'] = self.steps[step]['resultcode_allowed']
+
     def cancel_children(self, step):
         '''
             Cancels all dependents of a step
@@ -290,7 +297,7 @@ class Job(object):
             Cancels children if a failed step.
         '''
         
-        if not results:
+        if results in self.steps[step]['resultcode_allowed']:
             self.completed.append(step)
             self.steps[step]['job_status']['status'] = 'complete'
         else:
@@ -433,7 +440,8 @@ class Job(object):
                     if results is not None: #step is finished
                         #Close the out file
                         self.processes[step]['out'].close()
-                        if not results:
+                        
+                        if results in self.steps[step]['resultcode_allowed']:
                             result_str = 'COMPLETE'
                         else:
                             result_str = 'FAILED'
@@ -475,10 +483,11 @@ class Job(object):
                     sim_msg = '(simulated)'
                 else:
                     sim_msg = ''
+
                 summary_verbose.append('Step: %s' % step)
                 summary_verbose.append('     name:       %s' % self.steps[step]['name'])
                 summary_verbose.append('     status :    %s %s' % (self.STATUSES[self.steps[step]['job_status']['status']]['name'], sim_msg))
-                summary_verbose.append('     resultcode: %s' % self.steps[step]['job_status']['resultcode'])
+                summary_verbose.append('     resultcode: %s (allowed: %s)' % (self.steps[step]['job_status']['resultcode'], self.steps[step]['resultcode_allowed']))
                 summary_verbose.append('     start:      %s' % self.steps[step]['job_status']['start_time'])
                 summary_verbose.append('     stop:       %s' % self.steps[step]['job_status']['stop_time'])
                 summary_verbose.append('     duration:   %s' % self.steps[step]['job_status']['duration'])
@@ -490,7 +499,7 @@ class Job(object):
                 summary_verbose.append('Step: %s' % step)
                 summary_verbose.append('     name:       %s' % self.steps[step]['name'])
                 summary_verbose.append('     status :    %s' % self.STATUSES[self.steps[step]['job_status']['status']]['name'])
-                summary_verbose.append('     resultcode: %s' % self.steps[step]['job_status']['resultcode'])
+                summary_verbose.append('     resultcode: %s (allowed: %s)' % (self.steps[step]['job_status']['resultcode'], self.steps[step]['resultcode_allowed']))
                 summary_verbose.append('     start:      %s' % self.steps[step]['job_status']['start_time'])
                 summary_verbose.append('     stop:       %s' % self.steps[step]['job_status']['stop_time'])
                 summary_verbose.append('     duration:   %s' % self.steps[step]['job_status']['duration'])
@@ -502,7 +511,7 @@ class Job(object):
                 summary_verbose.append('Step: %s' % step)
                 summary_verbose.append('     name:       %s' % self.steps[step]['name'])
                 summary_verbose.append('     status :    %s' % self.STATUSES[self.steps[step]['job_status']['status']]['name'])
-                summary_verbose.append('     resultcode: %s' % self.steps[step]['job_status']['resultcode'])
+                summary_verbose.append('     resultcode: %s (allowed: %s)' % (self.steps[step]['job_status']['resultcode'], self.steps[step]['resultcode_allowed']))
                 summary_verbose.append('     start:      %s' % self.steps[step]['job_status']['start_time'])
                 summary_verbose.append('     stop:       %s' % self.steps[step]['job_status']['stop_time'])
                 summary_verbose.append('     duration:   %s' % self.steps[step]['job_status']['duration'])
@@ -514,7 +523,7 @@ class Job(object):
                 summary_verbose.append('Step: %s' % step)
                 summary_verbose.append('     name:       %s' % self.steps[step]['name'])
                 summary_verbose.append('     status :    %s' % self.STATUSES[self.steps[step]['job_status']['status']]['name'])
-                summary_verbose.append('     resultcode: %s' % self.steps[step]['job_status']['resultcode'])
+                summary_verbose.append('     resultcode: %s (allowed: %s)' % (self.steps[step]['job_status']['resultcode'], self.steps[step]['resultcode_allowed']))
                 summary_verbose.append('     start:      %s' % self.steps[step]['job_status']['start_time'])
                 summary_verbose.append('     stop:       %s' % self.steps[step]['job_status']['stop_time'])
                 summary_verbose.append('     duration:   %s' % self.steps[step]['job_status']['duration'])
@@ -534,7 +543,7 @@ class Job(object):
         summary.append('    steps failed:    %s' % len(self.failed))
         summary.append('    steps canceled:  %s' % len(self.get_canceled_steps()))
         summary.append('    steps aborted:   %s' % len(self.get_aborted_steps()))
-        summary.append('    completed list:  %s' % ",".join(sorted(self.completed)))
+        summary.append('    completed steps: %s' % ",".join(sorted(self.completed)))
         summary.append(SEP)
         
         #If silent, just returns the data

@@ -77,7 +77,7 @@ CHANGES
     20130521    tschmitt@schmittworks.com   Added --disable parameter
                                             Added --running_delay parameter
                                             Fixed bug in print_results() call in sigint_handler
-    2015072     tschmitt@schmittworks.com   Misc cleanup
+    20150720    tschmitt@schmittworks.com   Misc cleanup
                                             Enforcing MAIL_FROM. This is now required and is NOT backward compatible.
 
 
@@ -199,7 +199,7 @@ if __name__ == '__main__':
                 default=True, help='verbose output')
         (options, args) = parser.parse_args()
 
-        #Somewhat of a hack to allow runtime setting of variables. These are passed through to the Job.
+        #Runtime setting of variables. These are passed through to the Job.
         if options.extras:
             options.json_extras = json.loads(options.extras)
         else:
