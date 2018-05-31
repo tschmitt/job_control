@@ -79,6 +79,7 @@ CHANGES
                                             Fixed bug in print_results() call in sigint_handler
     20150720    tschmitt@schmittworks.com   Misc cleanup
                                             Enforcing MAIL_FROM. This is now required and is NOT backward compatible.
+    20180530    tschmitt@schmittworks.com   Added error handling for send_summary_mail()
 
 
 VERSION
@@ -141,7 +142,12 @@ def main ():
 
     #Send the email summary on failure or if desired
     if not job.is_success() or (options.send_success_email and job.is_success()):
-        job.send_summary_mail()
+        try:
+            job.send_summary_mail()
+        except Exception, e:
+            print 'ERROR, EMAIL EXCEPTION'
+            print str(e)
+            return 4
     
     #Job result
     if job.is_success():
