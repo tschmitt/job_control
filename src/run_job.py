@@ -81,6 +81,7 @@ CHANGES
                                             Enforcing MAIL_FROM. This is now required and is NOT backward compatible.
     20180530    tschmitt@schmittworks.com   Added error handling for send_summary_mail()
                                             Removed default for --email
+                                            Added better timestamp formatting for logging.
 
 
 VERSION
@@ -111,7 +112,7 @@ def main ():
     #Create the job instance
     job = jobs.Job(options.path, options.log_path, options.config, options.simulate, options.json_extras, options.disabled)
         
-    print job.start_time, 'JOB START'
+    print job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB START'
     if options.simulate:
         print '*** SIMULATE MODE - No steps will be executed ***'
 
@@ -138,7 +139,7 @@ def main ():
     job.stop_time = datetime.today()
     job.duration = job.stop_time-job.start_time
     job.save()
-    print job.start_time, 'JOB COMPLETE'
+    print job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB COMPLETE'
     job.print_results(True, False)
 
     #Send the email summary on failure or if desired

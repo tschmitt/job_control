@@ -27,6 +27,7 @@ CHANGES
     20180419    tschmitt@schmittworks.com           Add optional step parameter, resultcode_allowed, to allow successful resultcodes other than 0
     20180530    tschmitt@schmittworks.com           Added mail_from_domain, which is appended to HOSTNAME and used as default mail_from.
                                                     Removed default mail_to. 
+                                                    Added better timestamp formatting for logging.
 
 VERSION
 
@@ -466,8 +467,13 @@ class Job(object):
                         sim_msg = '(simulated)'
                     else:
                         sim_msg = ''
-                    print '%s STEP %s: %s resultcode: %s duration: %s %s' % (datetime.today(), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg)
+                    print '%s STEP %s: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg)
                     
+    def format_date(self, datetime):
+        '''
+            Returns a formatted datetime for logging
+        '''
+        return datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     def print_results(self, verbose, silent):
         '''
@@ -494,8 +500,8 @@ class Job(object):
                 summary_verbose.append('     name:       %s' % self.steps[step]['name'])
                 summary_verbose.append('     status :    %s %s' % (self.STATUSES[self.steps[step]['job_status']['status']]['name'], sim_msg))
                 summary_verbose.append('     resultcode: %s (allowed: %s)' % (self.steps[step]['job_status']['resultcode'], self.steps[step]['resultcode_allowed']))
-                summary_verbose.append('     start:      %s' % self.steps[step]['job_status']['start_time'])
-                summary_verbose.append('     stop:       %s' % self.steps[step]['job_status']['stop_time'])
+                summary_verbose.append('     start:      %s' % self.format_date(self.steps[step]['job_status']['start_time']))
+                summary_verbose.append('     stop:       %s' % self.format_date(self.steps[step]['job_status']['stop_time']))
                 summary_verbose.append('     duration:   %s' % self.steps[step]['job_status']['duration'])
             summary_verbose.append(SEP)
             summary_verbose.append('Failed Steps:')
@@ -506,8 +512,8 @@ class Job(object):
                 summary_verbose.append('     name:       %s' % self.steps[step]['name'])
                 summary_verbose.append('     status :    %s' % self.STATUSES[self.steps[step]['job_status']['status']]['name'])
                 summary_verbose.append('     resultcode: %s (allowed: %s)' % (self.steps[step]['job_status']['resultcode'], self.steps[step]['resultcode_allowed']))
-                summary_verbose.append('     start:      %s' % self.steps[step]['job_status']['start_time'])
-                summary_verbose.append('     stop:       %s' % self.steps[step]['job_status']['stop_time'])
+                summary_verbose.append('     start:      %s' % self.format_date(self.steps[step]['job_status']['start_time']))
+                summary_verbose.append('     stop:       %s' % self.format_date(self.steps[step]['job_status']['stop_time']))
                 summary_verbose.append('     duration:   %s' % self.steps[step]['job_status']['duration'])
             summary_verbose.append(SEP)
             summary_verbose.append('Canceled Steps:')
@@ -541,8 +547,8 @@ class Job(object):
         summary.append('Job:')
         summary.append('    config file      %s' % self.config_path)
         summary.append('    log path         %s' % self.log_path)
-        summary.append('    start:           %s' % self.start_time)
-        summary.append('    stop:            %s' % self.stop_time)
+        summary.append('    start:           %s' % self.format_date(self.start_time))
+        summary.append('    stop:            %s' % self.format_date(self.stop_time))
         summary.append('    duration:        %s' % self.duration)
         summary.append('    steps total:     %s' % len(self.steps))
         summary.append('    steps completed: %s' % len(self.completed))
@@ -578,10 +584,10 @@ class Job(object):
             
             #Gather steps
             for step in steps:
-                cur_running_msg = cur_running_msg + '%s: %s (pid: %s) (name: %s)' % (step, datetime.today() - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'], self.steps[step]['name'])  + '\n'
+                cur_running_msg = cur_running_msg + '%s: %s (pid: %s) (name: %s)' % (step, self.format_date(datetime.today()) - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'], self.steps[step]['name'])  + '\n'
             
             # Display currently running
-            print '%s CURRENTLY RUNNING STEPS (%s) ***********************\n%s' % (datetime.today(), len(steps), cur_running_msg)
+            print '%s CURRENTLY RUNNING STEPS (%s) ***********************\n%s' % (self.format_date(datetime.today()), len(steps), cur_running_msg)
             
     def process_queue(self, verbose):
         '''
@@ -610,11 +616,11 @@ class Job(object):
                     self.steps[step]['job_status']['pid'] = self.processes[step]['process'].pid
 
                 if verbose:
-                    print '%s STEP %s: %s (pid: %s) (name: %s)' % (datetime.today(), 'SPAWNED', step, self.steps[step]['job_status']['pid'], self.steps[step]['name'])
+                    print '%s STEP %s: %s (pid: %s) (name: %s)' % (self.format_date(datetime.today()), 'SPAWNED', step, self.steps[step]['job_status']['pid'], self.steps[step]['name'])
             elif self.steps[step]['type'] == 'internal':
                 if self.steps[step]['task'] == 'send_mail':
                     if verbose:
-                        print '%s STEP %s: %s' % (datetime.today(), 'EXECUTED', step)
+                        print '%s STEP %s: %s' % (self.format_date(datetime.today()), 'EXECUTED', step)
                     #Send email
                     if not self.simulate and not self.steps[step]['job_status']['simulate']:
                         results = self.send_mail(**self.steps[step]['args'][1])
@@ -632,10 +638,10 @@ class Job(object):
                     else:
                         sim_msg = ''
                     if verbose:
-                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (datetime.today(), step, results, self.steps[step]['job_status']['duration'], sim_msg)
+                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), step, results, self.steps[step]['job_status']['duration'], sim_msg)
                 if self.steps[step]['task'] == 'sleep':
                     if verbose:
-                        print '%s STEP %s: %s (Sleeping for %s seconds)' % (datetime.today(), 'EXECUTED', step, self.steps[step]['args'][1]['seconds'])
+                        print '%s STEP %s: %s (Sleeping for %s seconds)' % (self.format_date(datetime.today()), 'EXECUTED', step, self.steps[step]['args'][1]['seconds'])
                     #Sleep for x seconds
                     if not self.simulate and not self.steps[step]['job_status']['simulate']:
                         time.sleep(float(self.steps[step]['args'][1]['seconds']))
@@ -647,7 +653,7 @@ class Job(object):
                     else:
                         sim_msg = ''
                     if verbose:
-                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (datetime.today(), step, results, self.steps[step]['job_status']['duration'], sim_msg)                        
+                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), step, results, self.steps[step]['job_status']['duration'], sim_msg)                        
             else:
                 raise InvalidTypeError(self.steps[step]['type'])
                     
