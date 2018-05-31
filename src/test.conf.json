@@ -4,7 +4,7 @@
         "concurrency": "2",
         "mail_to": "someone@somewhere.com",
         "mail_to_fail": "123456789@vtext.com",
-        "mail_from": "job_control_test@somehere.com"
+        "mail_from_domain": "somewhere.com"
     },
     "steps": {
         "103": {"enabled": true, "dependencies": [], "name": "step 103", "task": "python ./test.step1.py $database", "type": "os", "comment": "test"},

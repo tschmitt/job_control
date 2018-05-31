@@ -25,6 +25,8 @@ CHANGES
                                                     Email recipient variables can now accept a comma delimited string to send to multiple recipients
     20180222    sara.rasmussen@clearcapital.com     Add job step name to outputs with PID
     20180419    tschmitt@schmittworks.com           Add optional step parameter, resultcode_allowed, to allow successful resultcodes other than 0
+    20180530    tschmitt@schmittworks.com           Added mail_from_domain, which is appended to HOSTNAME and used as default mail_from.
+                                                    Removed default mail_to. 
 
 VERSION
 
@@ -143,8 +145,9 @@ class Job(object):
                             'date_time_friendly': self.start_time.strftime('%c'),
                             'hostname': self.HOSTNAME,
                             'hostname_fqdn': self.HOSTNAME_FQDN,
-                            'mail_from': self.HOSTNAME + '@somewhere.com',
-                            'mail_to': 'ops@somewhere.com',
+                            'mail_from_domain': '',
+                            'mail_from': '',
+                            'mail_to': '',
                             'mail_to_fail': '',
                             'smtp_relay': 'localhost'
                                 }
@@ -156,7 +159,10 @@ class Job(object):
         #Set defaults
         self.merge_default_to_config()
         self.CONCURRENCY = self.config['variables']['concurrency']
-        self.MAIL_FROM = self.config['variables']['mail_from']
+        if not self.config['variables']['mail_from']:
+            self.MAIL_FROM = self.HOSTNAME + '@' + self.config['variables']['mail_from_domain']
+        else:
+            self.MAIL_FROM = self.config['variables']['mail_from']
         self.MAIL_TO = self.config['variables']['mail_to']
         self.MAIL_TO_FAIL = self.config['variables']['mail_to_fail']
         self.SMTP_RELAY = self.config['variables']['smtp_relay']

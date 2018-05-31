@@ -32,7 +32,6 @@ DESCRIPTION
                 Comma delimited list of steps to disable                    
         -e, --email
                 Email_to address for job notices
-                    (Default = ops@somewhere.com)
         -E, --extras
                 Additional parameters in JSON format. These are passed through to the Job.
         -r, --running_delay
@@ -62,6 +61,7 @@ EXIT job.statuses
     1    Job control internal error
     2    Keyboard Interrupt (Ctrl-C)
     3    Step failure
+    4    Email failure
     
 
 
@@ -80,6 +80,7 @@ CHANGES
     20150720    tschmitt@schmittworks.com   Misc cleanup
                                             Enforcing MAIL_FROM. This is now required and is NOT backward compatible.
     20180530    tschmitt@schmittworks.com   Added error handling for send_summary_mail()
+                                            Removed default for --email
 
 
 VERSION
@@ -192,7 +193,7 @@ if __name__ == '__main__':
         parser.add_option ('-D', '--disabled', action='store',
                 help='Comma delimited list of steps to disable')
         parser.add_option ('-e', '--email', action='store',
-                help='Email_to address for job notices', default='ops@somewhere.com')
+                help='Email_to address for job notices')
         parser.add_option ('-E', '--extras', action='store',
                 help='Additional parameters in JSON format')
         parser.add_option ('-r', '--running_delay', action='store',
