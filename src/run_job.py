@@ -34,6 +34,8 @@ DESCRIPTION
                 Email_to address for job notices
         -E, --extras
                 Additional parameters in JSON format. These are passed through to the Job.
+        --extras_file
+                Additional parameters stored in JSON file. These are merged with --extras.
         -r, --running_delay
                 Print summary of running steps every n seconds
                     (Default = 900 / Value must be at least 60)
@@ -82,6 +84,7 @@ CHANGES
     20180530    tschmitt@schmittworks.com   Added error handling for send_summary_mail()
                                             Removed default for --email
                                             Added better timestamp formatting for logging.
+                                            Added --extras_file parameter and handling.
 
 
 VERSION
@@ -100,6 +103,7 @@ import signal
 import socket
 import sys
 import time
+from copy import deepcopy
 from datetime import datetime
 from job_control import jobs
 
@@ -197,6 +201,8 @@ if __name__ == '__main__':
                 help='Email_to address for job notices')
         parser.add_option ('-E', '--extras', action='store',
                 help='Additional parameters in JSON format')
+        parser.add_option ('--extras_file', action='store',
+                help='Additional parameters stored in JSON file')
         parser.add_option ('-r', '--running_delay', action='store',
                 help='Print summary of running steps every n seconds', type='int', default=900)
         parser.add_option ('-s', '--simulate', action='store_true',
@@ -208,10 +214,25 @@ if __name__ == '__main__':
         (options, args) = parser.parse_args()
 
         #Runtime setting of variables. These are passed through to the Job.
+        #From command line
         if options.extras:
             options.json_extras = json.loads(options.extras)
         else:
             options.json_extras = {}
+
+        #From JSON file
+        #Command line and JSON file are merged with command line winning if duplicate 
+        if options.extras_file:
+            extras_file_path = os.path.join(options.path, options.extras_file)
+            f = open(extras_file_path, 'r')
+            #Load entire json object
+            extras_contents = f.read()
+            f.close()
+            extras_contents = json.loads(extras_contents)
+            merged = deepcopy(extras_contents)
+            merged.update(options.json_extras)
+            options.json_extras = merged
+
 
         #Validation
         #Test for log_path
