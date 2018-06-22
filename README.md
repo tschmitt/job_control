@@ -1,8 +1,10 @@
 # Job Control
 
-Job Control is a Python utility that will execute a simple or complex job flow on a Linux server.
+Job Control is a Python utility that will execute a simple or complex job flow on a Linux server. It takes care logging, notification, and concurrency allowing you to focus on job flow.
 
 The goal is to have a simple, but flexible job controller that can handle complex job flow with a simple JSON configuration. No database is required, which provides transporatability.
+
+Anyone that can configure a JSON file can use job_control. No Python knowledge is required.
 
 Requirements
 
@@ -49,7 +51,7 @@ Requirements
   - Job summary
 - Email summary on SUCCESS/FAILURE
   - success email is optional
-- Configurable queue execution
+- Configurable queue monitoring interval
   - Default is 1 second
 - Execute sub jobs as a step
 
@@ -57,11 +59,11 @@ Requirements
 
 The job and steps are defined in a JSON format configuration file.
 
-Any variable may be defined in the variables object or system variables may be overwritten. These variables are then utilized to change job behavior or for variable replacement in the steps.
+Any variable may be defined in the variables object and system variables may be overwritten. These variables are then utilized to change job behavior or for variable replacement in the steps.
 
 You can create a very reusable configuration file by passing in parameters at runtime.
 
-Variable replacement is similar to Linux variables and uses "$" to prefix the variable name. "$$" may be used to escape the dollar sign. Variable replacement is performed at job initiation. No changes are allowed after job start.
+Variable replacement is similar to Linux variables and uses "\$" to prefix the variable name. "\$\$" may be used to escape a dollar sign. Variable replacement is performed at job initiation. No changes are allowed after job start.
 
 ### System variables
 
@@ -94,7 +96,7 @@ Variable replacement is similar to Linux variables and uses "$" to prefix the va
 - name - A friendly name for this step. This will appear in logs etc.
 - task - The actual work to be performed. This can be any operating system command or a special - keyword for internal step types.
 - enabled - (true | false) - Any step may be selectively disabled for a job execution. This is most useful during a re-run of a failed job. Any successful steps should be set to "false" and the job re-executed. The entire job flow will be processed, but the disabled steps will simply show as "simulated" and behave like they completed successfully.
-- resultcode_allowed - Default: 0. Pass in and array of allowed successful result codes. This is useful for edge cases where a non-zero may be considered a success.
+- resultcode_allowed - Default: 0. Pass in an array of allowed successful result codes. This is useful for edge cases where a non-zero may be considered a success.
 - This example configuration displays most of the options:
   - comment - This is simply to comment the JSON file and is ignored by job control.
   - The "database" variable is set for variable replacement as "$database"
@@ -110,7 +112,7 @@ Variable replacement is similar to Linux variables and uses "$" to prefix the va
   - non-zero = failure
   - resultcode_allowed can override this
 
-  > More complex OS command may involve nested quotes and special characters. These can be tricky, as proper escaping may be required using "\". shlex.split(s) may assist in creating a proper string. See http://docs.python.org/library/subprocess.html#popen-constructor . Another awesome tool is: http://bernhardhaeussner.de/odd/json-escape . This web page will save your sanity.
+  > More complex OS command may involve nested quotes and special characters. These can be tricky, as proper escaping may be required using "\". shlex.split(s) may assist in creating a proper string. See [http://docs.python.org/library/subprocess.html#popen-constructor](http://docs.python.org/library/subprocess.html#popen-constructor) . Another awesome tool is: [http://bernhardhaeussner.de/odd/json-escape](http://bernhardhaeussner.de/odd/json-escape) . This web page will save your sanity.
 
 ### Example config
 
