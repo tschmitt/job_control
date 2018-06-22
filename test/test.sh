@@ -32,7 +32,7 @@ DISABLE=901
 
 
 # Launch test
-python -u -B run_job.py -d 0 --no_success_email -p $DIR -c test.conf.json -l $LOG_PATH --extras_file test_extras.json -E "{\"test_a\": \"test from -E\"}" -D $DISABLE 2>&1 | tee $LOG_PATH/test.log
+python -u -B ../src/run_job.py -d 0 --no_success_email -p $DIR -c test.conf.json -l $LOG_PATH --extras_file test_extras.json -E "{\"test_a\": \"test from -E\"}" -D $DISABLE 2>&1 | tee $LOG_PATH/test.log
 
 # Exit with the job_control results
 exit ${PIPESTATUS[0]}
