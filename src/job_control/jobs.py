@@ -27,7 +27,8 @@ CHANGES
     20180419    tschmitt@schmittworks.com           Add optional step parameter, resultcode_allowed, to allow successful resultcodes other than 0
     20180530    tschmitt@schmittworks.com           Added mail_from_domain, which is appended to HOSTNAME and used as default mail_from.
                                                     Removed default mail_to. 
-                                                    Added better timestamp formatting for logging.
+                                                    Added several timestamp formatting options for logging.
+                                                    
 
 VERSION
 
@@ -143,6 +144,9 @@ class Job(object):
                             'config_file': self.config_file,
                             'date': self.start_time.strftime('%Y_%m_%d'),
                             'date_time': self.start_time.strftime('%Y%m%d_%H%M%S'),
+                            'date_time_2': self.start_time.strftime('%Y%m%d-%H%M%S'),
+                            'date_time_3': self.start_time.strftime('%Y%m%d%H%M%S'),
+                            'date_time_4': self.start_time.strftime('%Y-%m-%d %H:%M:%S'),
                             'date_time_friendly': self.start_time.strftime('%c'),
                             'hostname': self.HOSTNAME,
                             'hostname_fqdn': self.HOSTNAME_FQDN,
