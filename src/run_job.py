@@ -89,7 +89,7 @@ CHANGES
 
 VERSION
 
-    1.7.000
+    1.7.001
     
 """
 try:
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     try:
         start_time = time.time()
         parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(),
-                usage=globals()['__doc__'], version='1.7.000')
+                usage=globals()['__doc__'], version='1.7.001')
         parser.add_option ('-p', '--path', action='store', help='File path',
                 default='./')
         parser.add_option ('-l', '--log_path', action='store', help='Log file path')

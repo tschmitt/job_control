@@ -28,11 +28,12 @@ CHANGES
     20180530    tschmitt@schmittworks.com           Added mail_from_domain, which is appended to HOSTNAME and used as default mail_from.
                                                     Removed default mail_to. 
                                                     Added several timestamp formatting options for logging.
+    20180705    tschmitt@schmittworks.com           Fixed error when calling print_running_summary.
                                                     
 
 VERSION
 
-    1.7.000
+    1.7.001
     
 """
 try:
@@ -588,7 +589,7 @@ class Job(object):
             
             #Gather steps
             for step in steps:
-                cur_running_msg = cur_running_msg + '%s: %s (pid: %s) (name: %s)' % (step, self.format_date(datetime.today()) - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'], self.steps[step]['name'])  + '\n'
+                cur_running_msg = cur_running_msg + '%s: %s (pid: %s) (name: %s)' % (step, datetime.today() - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'], self.steps[step]['name'])  + '\n'
             
             # Display currently running
             print '%s CURRENTLY RUNNING STEPS (%s) ***********************\n%s' % (self.format_date(datetime.today()), len(steps), cur_running_msg)
