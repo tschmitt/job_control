@@ -1,6 +1,6 @@
 # Job Control
 
-Job Control is a Python utility that will execute a simple or complex job flow on a Linux server. It takes care logging, notification, and concurrency allowing you to focus on job flow.
+Job Control is a Python utility that will execute a simple or complex job flow on a Linux server. It takes care of logging, notification, and concurrency allowing you to focus on job flow.
 
 The goal is to have a simple, but flexible job controller that can handle complex job flow with a simple JSON configuration. No database is required, which provides transporatability.
 
@@ -8,8 +8,8 @@ Anyone that can configure a JSON file can use job_control. No Python knowledge i
 
 Requirements
 
-- Python 2.4 - 2.7
-- simplejson (Python < 2.6)
+- Python 2.6 - 3.7
+- [[future](https://pypi.org/project/future/)] for Python < 3
 
 ## Features
 
@@ -112,7 +112,7 @@ Variable replacement is similar to Linux variables and uses "\$" to prefix the v
   - non-zero = failure
   - resultcode_allowed can override this
 
-  > More complex OS command may involve nested quotes and special characters. These can be tricky, as proper escaping may be required using "\". shlex.split(s) may assist in creating a proper string. See [http://docs.python.org/library/subprocess.html#popen-constructor](http://docs.python.org/library/subprocess.html#popen-constructor) . Another awesome tool is: [http://bernhardhaeussner.de/odd/json-escape](http://bernhardhaeussner.de/odd/json-escape) . This web page will save your sanity.
+  > More complex OS command may involve nested quotes and special characters. These can be tricky, as proper escaping may be required using "\". shlex.split(s) may assist in creating a proper string. See [http://docs.python.org/library/subprocess.html#popen-constructor](http://docs.python.org/library/subprocess.html#popen-constructor) . Another awesome tool is: [https://www.freeformatter.com/json-escape.html](https://www.freeformatter.com/json-escape.html) . This web page will save your sanity.
 
 ### Example config
 
@@ -192,22 +192,22 @@ Parameters:
 Runs a job in the current directory with all defaults.
 
 ```bash
-python2.7 -u -B run_job.py -c job1.conf.json
+python3 -u -B run_job.py -c job1.conf.json
 ```
 
 Runs a job in the current directory with all defaults and logs the job execution.
 
 ```bash
-python2.7 -u -B /home/someuser/scripts/job_control/run_job.py -p /tmp/jobs/refresh -c refresh.conf.json 2>&1 | tee /tmp/jobs/refresh/logs/refresh.`date +%Y%m%d`.log
+python3 -u -B /home/someuser/scripts/job_control/run_job.py -p /tmp/jobs/refresh -c refresh.conf.json 2>&1 | tee /tmp/jobs/refresh/logs/refresh.`date +%Y%m%d`.log
 ```
 
 Runs a job in a defined directory with custom settings.
 
 ```bash
 # Example 1
-python2.7 -u -B run_job.py -p /home/jobs/  -c job2.conf.json -d 10 -v -s --no_success_email -E '{"test_var": "hello"}'
+python3 -u -B run_job.py -p /home/jobs/  -c job2.conf.json -d 10 -v -s --no_success_email -E '{"test_var": "hello"}'
 # Example 2
-python2.7 -u -B run_job.py -p /home/jobs/  -c job2.conf.json -d 10 -v -s --no_success_email -E "{\"test-var\": \"$TEST_VAR\"}"
+python3 -u -B run_job.py -p /home/jobs/  -c job2.conf.json -d 10 -v -s --no_success_email -E "{\"test-var\": \"$TEST_VAR\"}"
 ```
 
 Passing shell variables into a job
@@ -219,10 +219,11 @@ LOG_PATH=/tmp/serve_refresh/logs/$LOG_DATE
 mkdir -p $LOG_PATH
 
 # Launch refresh
-python2.7 -u -B /home/someuser/scripts/prod/job_control/run_job.py -p /home/someuser/scripts/refresh -c refresh.conf.json -l $LOG_PATH -E "{\"log_ts\": \"$LOG_DATE\"}" > $LOG_PATH/refresh.log
+python3 -u -B /home/someuser/scripts/prod/job_control/run_job.py -p /home/someuser/scripts/refresh -c refresh.conf.json -l $LOG_PATH -E "{\"log_ts\": \"$LOG_DATE\"}" > $LOG_PATH/refresh.log
 ```
 
 > The following parameters are important.
+
 - The -u parameter when launching Python is important to obtain un-buffered STDOUT.
 - The -B parameter when launching Python is important to NOT write .pyc files in the shared file path.
 

@@ -73,29 +73,30 @@ AUTHOR
 
 CHANGES
 
-    20120719    tschmitt@schmittworks.com   Added --log_path parameter to allow for customizable log file location.
-                                            Added --no_success_email parameter to prevent the summary email for successful jobs.
-                                            A failure email will always be sent.
-    20130521    tschmitt@schmittworks.com   Added --disable parameter
-                                            Added --running_delay parameter
-                                            Fixed bug in print_results() call in sigint_handler
-    20150720    tschmitt@schmittworks.com   Misc cleanup
-                                            Enforcing MAIL_FROM. This is now required and is NOT backward compatible.
-    20180530    tschmitt@schmittworks.com   Added error handling for send_summary_mail()
-                                            Removed default for --email
-                                            Added better timestamp formatting for logging.
-                                            Added --extras_file parameter and handling.
+    20120719    tschmitt@schmittworks.com       Added --log_path parameter to allow for customizable log file location.
+                                                Added --no_success_email parameter to prevent the summary email for successful jobs.
+                                                A failure email will always be sent.
+    20130521    tschmitt@schmittworks.com       Added --disable parameter
+                                                Added --running_delay parameter
+                                                Fixed bug in print_results() call in sigint_handler
+    20150720    tschmitt@schmittworks.com       Misc cleanup
+                                                Enforcing MAIL_FROM. This is now required and is NOT backward compatible.
+    20180530    tschmitt@schmittworks.com       Added error handling for send_summary_mail()
+                                                Removed default for --email
+                                                Added better timestamp formatting for logging.
+                                                Added --extras_file parameter and handling.
+    20191031    cameron.ezell@clearcapital.com  Updated to make compatible with Python 3
 
 
 VERSION
 
-    1.7.001
+    1.8.000
     
 """
-try:
-    import json
-except ImportError:
-    import simplejson as json
+from __future__ import print_function
+from builtins import str
+
+import json
 import optparse
 import os
 import traceback
@@ -116,9 +117,9 @@ def main ():
     #Create the job instance
     job = jobs.Job(options.path, options.log_path, options.config, options.simulate, options.json_extras, options.disabled)
         
-    print job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB START'
+    print(job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB START')
     if options.simulate:
-        print '*** SIMULATE MODE - No steps will be executed ***'
+        print('*** SIMULATE MODE - No steps will be executed ***')
 
     #Register SIGINT (2)
     signal.signal(signal.SIGINT, sigint_handler)
@@ -143,16 +144,16 @@ def main ():
     job.stop_time = datetime.today()
     job.duration = job.stop_time-job.start_time
     job.save()
-    print job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB COMPLETE'
+    print(job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB COMPLETE')
     job.print_results(True, False)
 
     #Send the email summary on failure or if desired
     if not job.is_success() or (options.send_success_email and job.is_success()):
         try:
             job.send_summary_mail()
-        except Exception, e:
-            print 'ERROR, EMAIL EXCEPTION'
-            print str(e)
+        except Exception as e:
+            print('ERROR, EMAIL EXCEPTION')
+            print(str(e))
             return 4
     
     #Job result
@@ -165,11 +166,11 @@ def sigint_handler(signal, frame):
     '''
         Shut down job if Ctrl-c or kill -2 is received
     '''
-    print '***** The job was canceled via SIGINT *****'
+    print('***** The job was canceled via SIGINT *****')
     job.cancel()
     job.print_results(True, False)
     job.send_summary_mail()
-    print '***** The job was canceled via SIGINT *****'
+    print('***** The job was canceled via SIGINT *****')
     sys.exit(2)
 
 #not currently being used, but will need it, so leave it   
@@ -252,22 +253,22 @@ if __name__ == '__main__':
         if not os.path.isdir(options.log_path):
             os.makedirs(options.log_path)
 
-        print 'START TIME:', time.asctime()
+        print('START TIME:', time.asctime())
         results = main()        
-        print 'END TIME:', time.asctime()
-        print 'ELAPSED TIME:',
+        print('END TIME:', time.asctime())
+        print('ELAPSED TIME:', end=' ')
         elapsed_time = time.time() - start_time
         if elapsed_time >= 60:
-            print round(elapsed_time / 60.0, 2), 'min'
+            print(round(elapsed_time / 60.0, 2), 'min')
         else:
-            print int(elapsed_time), 'sec'
+            print(int(elapsed_time), 'sec')
         
         sys.exit(results)
 
-    except SystemExit, e: # sys.exit()
+    except SystemExit as e: # sys.exit()
         raise e
-    except Exception, e:
-        print 'ERROR, UNEXPECTED EXCEPTION'
-        print str(e)
+    except Exception as e:
+        print('ERROR, UNEXPECTED EXCEPTION')
+        print(str(e))
         traceback.print_exc()
         os._exit(1)
