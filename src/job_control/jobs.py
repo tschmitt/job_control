@@ -29,17 +29,17 @@ CHANGES
                                                     Removed default mail_to. 
                                                     Added several timestamp formatting options for logging.
     20180705    tschmitt@schmittworks.com           Fixed error when calling print_running_summary.
+    20191031    cameron.ezell@clearcapital.com      Updated to make compatible with Python 3
                                                     
 
 VERSION
 
-    1.7.001
+    1.8.000
     
 """
-try:
-    import json
-except ImportError:
-    import simplejson as json
+from __future__ import print_function
+from builtins import object
+import json
 import os
 import pickle
 import shlex
@@ -47,6 +47,7 @@ import signal
 import smtplib
 import socket
 import time
+import sys
 from collections import deque
 from copy import deepcopy
 from datetime import date
@@ -188,7 +189,7 @@ class Job(object):
             self.disabled_steps = self.disabled.replace(' ', '').split(',')
 
         #Preprocessing
-        for step, value in self.steps.iteritems():
+        for step, value in self.steps.items():
             #Set up the default job_status for each step
             self.steps[step]['job_status'] = deepcopy(self.STEP_STATUS_TEMPLATE)
             
@@ -198,7 +199,11 @@ class Job(object):
                     
             #Build args
             #Need to encode the task value for Python < 2.7.3. json returns unicode, but shlex cannot handle unicode.
-            self.steps[step]['args'] = shlex.split(self.steps[step]['task'].encode('utf-8'))
+            pyVersion = float(str(sys.version_info[0]) + "." + str(sys.version_info[1]))
+            if pyVersion < 2.7:
+                self.steps[step]['args'] = shlex.split(self.steps[step]['task'].encode('utf-8'))
+            else:
+                self.steps[step]['args'] = shlex.split(self.steps[step]['task'])
             if 'detail' in self.steps[step]:
                 self.steps[step]['args'].append(self.steps[step]['detail'])
                 
@@ -238,7 +243,7 @@ class Job(object):
         '''
         
         children = []
-        for child in sorted(self.steps.iterkeys()):
+        for child in sorted(self.steps.keys()):
             if step in self.steps[child]['dependencies']:
                 children.append(child)
         return children
@@ -345,7 +350,7 @@ class Job(object):
             Return all steps except step
         '''
         
-        keys = self.steps.keys()
+        keys = list(self.steps.keys())
         keys.remove(step)
         return keys
         
@@ -404,7 +409,7 @@ class Job(object):
             return config_contents
 
         except IOError:
-            print '%s : %s' % ('Could not read config file', self.config_path)
+            print('%s : %s' % ('Could not read config file', self.config_path))
             raise
         except Exception:
             raise
@@ -419,7 +424,7 @@ class Job(object):
             self.config = json.loads(config_template)
 
         except:
-            print '%s : %s' % ('Could not parse json', self.config_path)
+            print('%s : %s' % ('Could not parse json', self.config_path))
             raise
         
     def merge_default_to_config(self):
@@ -472,7 +477,7 @@ class Job(object):
                         sim_msg = '(simulated)'
                     else:
                         sim_msg = ''
-                    print '%s STEP %s: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg)
+                    print('%s STEP %s: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg))
                     
     def format_date(self, datetime):
         '''
@@ -566,10 +571,10 @@ class Job(object):
         #If silent, just returns the data
         if not silent:
             for line in summary_verbose:
-                print line
+                print(line)
                 
             for line in summary:
-                print line            
+                print(line)            
             
         return {'summary': summary, 'summary_verbose': summary_verbose}
 
@@ -592,7 +597,7 @@ class Job(object):
                 cur_running_msg = cur_running_msg + '%s: %s (pid: %s) (name: %s)' % (step, datetime.today() - steps[step]['job_status']['start_time'], self.steps[step]['job_status']['pid'], self.steps[step]['name'])  + '\n'
             
             # Display currently running
-            print '%s CURRENTLY RUNNING STEPS (%s) ***********************\n%s' % (self.format_date(datetime.today()), len(steps), cur_running_msg)
+            print('%s CURRENTLY RUNNING STEPS (%s) ***********************\n%s' % (self.format_date(datetime.today()), len(steps), cur_running_msg))
             
     def process_queue(self, verbose):
         '''
@@ -621,11 +626,11 @@ class Job(object):
                     self.steps[step]['job_status']['pid'] = self.processes[step]['process'].pid
 
                 if verbose:
-                    print '%s STEP %s: %s (pid: %s) (name: %s)' % (self.format_date(datetime.today()), 'SPAWNED', step, self.steps[step]['job_status']['pid'], self.steps[step]['name'])
+                    print('%s STEP %s: %s (pid: %s) (name: %s)' % (self.format_date(datetime.today()), 'SPAWNED', step, self.steps[step]['job_status']['pid'], self.steps[step]['name']))
             elif self.steps[step]['type'] == 'internal':
                 if self.steps[step]['task'] == 'send_mail':
                     if verbose:
-                        print '%s STEP %s: %s' % (self.format_date(datetime.today()), 'EXECUTED', step)
+                        print('%s STEP %s: %s' % (self.format_date(datetime.today()), 'EXECUTED', step))
                     #Send email
                     if not self.simulate and not self.steps[step]['job_status']['simulate']:
                         results = self.send_mail(**self.steps[step]['args'][1])
@@ -643,10 +648,10 @@ class Job(object):
                     else:
                         sim_msg = ''
                     if verbose:
-                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), step, results, self.steps[step]['job_status']['duration'], sim_msg)
+                        print('%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), step, results, self.steps[step]['job_status']['duration'], sim_msg))
                 if self.steps[step]['task'] == 'sleep':
                     if verbose:
-                        print '%s STEP %s: %s (Sleeping for %s seconds)' % (self.format_date(datetime.today()), 'EXECUTED', step, self.steps[step]['args'][1]['seconds'])
+                        print('%s STEP %s: %s (Sleeping for %s seconds)' % (self.format_date(datetime.today()), 'EXECUTED', step, self.steps[step]['args'][1]['seconds']))
                     #Sleep for x seconds
                     if not self.simulate and not self.steps[step]['job_status']['simulate']:
                         time.sleep(float(self.steps[step]['args'][1]['seconds']))
@@ -658,7 +663,7 @@ class Job(object):
                     else:
                         sim_msg = ''
                     if verbose:
-                        print '%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), step, results, self.steps[step]['job_status']['duration'], sim_msg)                        
+                        print('%s STEP COMPLETE: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), step, results, self.steps[step]['job_status']['duration'], sim_msg))                        
             else:
                 raise InvalidTypeError(self.steps[step]['type'])
                     
@@ -667,7 +672,7 @@ class Job(object):
             Places runnable steps in the queue
         '''
         
-        for step in sorted(self.steps.iterkeys()):
+        for step in sorted(self.steps.keys()):
             #If waiting and not already queued and its dependencies are met
             if self.steps[step]['job_status']['status'] == 'waiting' and step not in self.queue and self.dependencies_met(step):
                 #Add to queue
@@ -717,10 +722,10 @@ class Job(object):
                 json.dump(conf, f, indent=4)
             except:
                 f.close()
-                print '%s : %s' % ('Could not write config file', self.config_path)
+                print('%s : %s' % ('Could not write config file', self.config_path))
                 raise            
         except IOError:
-            print '%s : %s' % ('Could not open config file', self.config_path)
+            print('%s : %s' % ('Could not open config file', self.config_path))
             raise
 
     def save(self):
@@ -740,14 +745,14 @@ class Job(object):
                 }
 
         try:
-            f = open(self.data_path, 'w')
+            f = open(self.data_path, 'wb')
             try:
                 pickle.dump(data, f, 0)
             except:
-                print '%s : %s' % ('Could not write data file', self.data_path)
+                print('%s : %s' % ('Could not write data file', self.data_path))
                 raise                  
         except IOError:
-            print '%s : %s' % ('Could not open data file', self.data_path)
+            print('%s : %s' % ('Could not open data file', self.data_path))
             raise
         
     def send_mail(self, mail_to, mail_from, mail_subject, mail_body):
@@ -815,15 +820,15 @@ class Job(object):
          """
         # Linux, Unix and MacOS:
         if hasattr(os, "sysconf"):
-           if os.sysconf_names.has_key("SC_NPROCESSORS_ONLN"):
+           if "SC_NPROCESSORS_ONLN" in os.sysconf_names:
                # Linux & Unix:
                ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
                if isinstance(ncpus, int) and ncpus > 0:
                    return ncpus
            else: # OSX:
-               return int(os.popen2("sysctl -n hw.ncpu")[1].read())
+               return int(os.popen("sysctl -n hw.ncpu").read())
         # Windows:
-        if os.environ.has_key("NUMBER_OF_PROCESSORS"):
+        if "NUMBER_OF_PROCESSORS" in os.environ:
                ncpus = int(os.environ["NUMBER_OF_PROCESSORS"]);
                if ncpus > 0:
                    return ncpus
