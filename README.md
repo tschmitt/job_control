@@ -8,7 +8,7 @@ Anyone that can configure a JSON file can use job_control. No Python knowledge i
 
 Requirements
 
-- Python 2.6 - 3.7
+- Python 2.6 - 3.8
 - [[future](https://pypi.org/project/future/)] for Python < 3
 
 ## Features
