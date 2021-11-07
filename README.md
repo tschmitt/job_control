@@ -8,14 +8,14 @@ Anyone that can configure a JSON file can use job_control. No Python knowledge i
 
 Requirements
 
-- Python 2.6 - 3.7
+- Python 2.6 - 3.8
 - [[future](https://pypi.org/project/future/)] for Python < 3
 
 ## Features
 
 - JSON configuration file
 - Configurable path
-- Simulate mode
+- Simulate execution
   - Individual steps
   - Entire job
 - Configurable flow
@@ -43,12 +43,14 @@ Requirements
 - Graceful job canceling
 - Selective step enabling/disabling
 - Runtime step disabling
+  - This is perfect for restarting a failed job
 - Logging
   - Detailed job-level logging
   - Step running summary
   - Step output logging
   - Configurable log path
   - Job summary
+  - JSON job summary log file
 - Email summary on SUCCESS/FAILURE
   - success email is optional
 - Configurable queue monitoring interval
@@ -243,8 +245,8 @@ Cascade
 
 ### Logs
 
-Each step will generate an individual log file containing STDOUT and STDERR from the process.
+Each step will generate an individual log file containing STDOUT and STDERR from the individual process.
 
 Logs will be created in a subdirectory /logs in the path specified by -p (--path) or in the directory specified by -l (--log_path). Appropriate permissions are required to create the path.
 
-Output of the job can be logged using standard Linux utilities such as tee or by using redirection.
+Output of the job can be logged using standard Linux utilities such as tee or by using redirection. The output contains some basic colorization by using ANSI escape characters. This works fine in a terminal or using tools like tee or less, but unfortunately the characters will end up in a log file if using redirection. The better solution is likely to have job_control take care of logging to the terminal and files and the coloring could be manged accordingly. That is for another day since 99% of the log viewing is via the terminal and it would be a fair amount of work to change in job_control. So be it.

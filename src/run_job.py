@@ -86,18 +86,16 @@ CHANGES
                                                 Added better timestamp formatting for logging.
                                                 Added --extras_file parameter and handling.
     20191031    cameron.ezell@clearcapital.com  Updated to make compatible with Python 3
+    20201120    cameron.ezell@clearcapital.com  Replace optparse with argparse
+    20211106    tschmitt@schmittworks.com       Added JSON log output
+                                                Colorized the output a bit
 
-
-VERSION
-
-    1.8.000
-    
 """
 from __future__ import print_function
 from builtins import str
 
 import json
-import optparse
+import argparse
 import os
 import traceback
 import signal
@@ -107,6 +105,8 @@ import time
 from copy import deepcopy
 from datetime import datetime
 from job_control import jobs
+
+VERSION = '1.9.000'
 
 def main ():
 
@@ -144,8 +144,9 @@ def main ():
     job.stop_time = datetime.today()
     job.duration = job.stop_time-job.start_time
     job.save()
+    job.save_log()
     print(job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB COMPLETE')
-    job.print_results(True, False)
+    job.print_results(True, True)
 
     #Send the email summary on failure or if desired
     if not job.is_success() or (options.send_success_email and job.is_success()):
@@ -168,7 +169,7 @@ def sigint_handler(signal, frame):
     '''
     print('***** The job was canceled via SIGINT *****')
     job.cancel()
-    job.print_results(True, False)
+    job.print_results(True, True)
     job.send_summary_mail()
     print('***** The job was canceled via SIGINT *****')
     sys.exit(2)
@@ -187,32 +188,33 @@ def log_it(dir, msg, mode):
 if __name__ == '__main__':
     try:
         start_time = time.time()
-        parser = optparse.OptionParser(formatter=optparse.TitledHelpFormatter(),
-                usage=globals()['__doc__'], version='1.7.001')
-        parser.add_option ('-p', '--path', action='store', help='File path',
+        parser = argparse.ArgumentParser(formatter_class=argparse.HelpFormatter)
+        parser.add_argument ('-p', '--path', help='File path', 
                 default='./')
-        parser.add_option ('-l', '--log_path', action='store', help='Log file path')
-        parser.add_option ('-c', '--config', action='store',
+        parser.add_argument ('-l', '--log_path', help='Log file path')
+        parser.add_argument ('-c', '--config', 
                 help='Job configuration file')
-        parser.add_option ('-d', '--delay', action='store',
-                help='Sleep seconds between iterations', type='int', default=1)
-        parser.add_option ('-D', '--disabled', action='store',
+        parser.add_argument ('-d', '--delay', 
+                help='Sleep seconds between iterations', type=int, default=1)
+        parser.add_argument ('-D', '--disabled', 
                 help='Comma delimited list of steps to disable')
-        parser.add_option ('-e', '--email', action='store',
+        parser.add_argument ('-e', '--email', 
                 help='Email_to address for job notices')
-        parser.add_option ('-E', '--extras', action='store',
+        parser.add_argument ('-E', '--extras', 
                 help='Additional parameters in JSON format')
-        parser.add_option ('--extras_file', action='store',
+        parser.add_argument ('--extras_file', 
                 help='Additional parameters stored in JSON file')
-        parser.add_option ('-r', '--running_delay', action='store',
-                help='Print summary of running steps every n seconds', type='int', default=900)
-        parser.add_option ('-s', '--simulate', action='store_true',
+        parser.add_argument ('-r', '--running_delay', 
+                help='Print summary of running steps every n seconds', type=int, default=900)
+        parser.add_argument ('-s', '--simulate', action='store_true',
                 help='Simulate a job execution', default=False)
-        parser.add_option ('--no_success_email', action='store_false',
+        parser.add_argument ('--no_success_email', action='store_false',
                 help='Sends a summary email on success', default=True, dest='send_success_email')        
-        parser.add_option ('-v', '--verbose', action='store_true',
+        parser.add_argument ('-v', '--verbose', action='store_true',
                 default=True, help='verbose output')
-        (options, args) = parser.parse_args()
+        parser.add_argument ('--version', action='version', version=VERSION,
+                help='Display current version of job_control')
+        options = parser.parse_args()
 
         #Runtime setting of variables. These are passed through to the Job.
         #From command line
