@@ -30,6 +30,8 @@ CHANGES
                                                     Added several timestamp formatting options for logging.
     20180705    tschmitt@schmittworks.com           Fixed error when calling print_running_summary.
     20191031    cameron.ezell@clearcapital.com      Updated to make compatible with Python 3
+    20211106    tschmitt@schmittworks.com           Added JSON log output
+                                                    Colorized the output a bit
                                                     
 
 VERSION
@@ -71,6 +73,10 @@ from subprocess import Popen, STDOUT
 #    else:
 #        return json.JSONEncoder.default(obj)
 
+ANSI_RESET="\033[0m"
+ANSI_GREEN="\033[92m"
+ANSI_RED="\033[31m"
+
 class Error(Exception):
     '''
         Base class for module exceptions
@@ -107,7 +113,9 @@ class Job(object):
         self.log_path = log_path
         self.data_path = os.path.join(self.log_path, '%s.%s' %
                                      (self.config_file.split('.')[0], 'pkl'))
-            
+        self.log_path_json = os.path.join(self.log_path, '%s.%s' %
+                                     (self.config_file.split('.')[0], 'log.json'))
+        
         #Defaults
         self.start_time = datetime.today()
         self.status_display_start = time.time()
@@ -460,14 +468,17 @@ class Job(object):
                         
                         if results in self.steps[step]['resultcode_allowed']:
                             result_str = 'COMPLETE'
+                            color = ANSI_GREEN
                         else:
                             result_str = 'FAILED'
+                            color = ANSI_RED
 
                         #Append to completed and update status
                         self.complete_step(step, results)
                         step_complete = True
                 else:
                     result_str = 'COMPLETE'
+                    color = ANSI_GREEN
                     results = 0
                     self.complete_step(step, results)
                     step_complete = True
@@ -477,7 +488,7 @@ class Job(object):
                         sim_msg = '(simulated)'
                     else:
                         sim_msg = ''
-                    print('%s STEP %s: %s resultcode: %s duration: %s %s' % (self.format_date(datetime.today()), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg))
+                    print('%s%s STEP %s: %s resultcode: %s duration: %s %s%s' % (color, self.format_date(datetime.today()), result_str, step, results, self.steps[step]['job_status']['duration'], sim_msg, ANSI_RESET))
                     
     def format_date(self, datetime):
         '''
@@ -485,7 +496,7 @@ class Job(object):
         '''
         return datetime.strftime("%Y-%m-%d %H:%M:%S")
 
-    def print_results(self, verbose, silent):
+    def print_results(self, verbose, terminal):
         '''
             Prints out a summary of the job results
         '''
@@ -557,19 +568,42 @@ class Job(object):
         summary.append('Job:')
         summary.append('    config file      %s' % self.config_path)
         summary.append('    log path         %s' % self.log_path)
+        summary.append('    log path_json    %s' % self.log_path_json)
         summary.append('    start:           %s' % self.format_date(self.start_time))
         summary.append('    stop:            %s' % self.format_date(self.stop_time))
         summary.append('    duration:        %s' % self.duration)
         summary.append('    steps total:     %s' % len(self.steps))
-        summary.append('    steps completed: %s' % len(self.completed))
-        summary.append('    steps failed:    %s' % len(self.failed))
-        summary.append('    steps canceled:  %s' % len(self.get_canceled_steps()))
-        summary.append('    steps aborted:   %s' % len(self.get_aborted_steps()))
+        if terminal:
+            if len(self.completed) < len(self.steps):
+                color = ANSI_RED
+            else:
+                color = ANSI_GREEN
+            summary.append('    %ssteps completed: %s%s' % (color, len(self.completed), ANSI_RESET))
+            if len(self.failed):
+                color = ANSI_RED
+            else:
+                color = ANSI_GREEN
+            summary.append('    %ssteps failed:    %s%s' % (color, len(self.failed), ANSI_RESET))
+            if len(self.get_canceled_steps()):
+                color = ANSI_RED
+            else:
+                color = ANSI_GREEN
+            summary.append('    %ssteps canceled:  %s%s' % (color, len(self.get_canceled_steps()), ANSI_RESET))
+            if len(self.get_aborted_steps()):
+                color = ANSI_RED
+            else:
+                color = ANSI_GREEN
+            summary.append('    %ssteps aborted:   %s%s' % (color, len(self.get_aborted_steps()), ANSI_RESET))
+        else:
+            summary.append('    steps completed: %s' % (len(self.completed)))
+            summary.append('    steps failed:    %s' % (len(self.failed)))
+            summary.append('    steps canceled:  %s' % (len(self.get_canceled_steps())))
+            summary.append('    steps aborted:   %s' % (len(self.get_aborted_steps())))
         summary.append('    completed steps: %s' % ",".join(sorted(self.completed)))
         summary.append(SEP)
         
-        #If silent, just returns the data
-        if not silent:
+        #If terminal mode, print the results, otherwise just return the data
+        if terminal:
             for line in summary_verbose:
                 print(line)
                 
@@ -755,6 +789,29 @@ class Job(object):
             print('%s : %s' % ('Could not open data file', self.data_path))
             raise
         
+    def save_log(self):
+        '''
+            Write the job status to a JSON file.
+        '''
+        log_data = {
+                
+                'hostname_fqdn': self.HOSTNAME_FQDN,
+                'job_start_time': self.start_time,
+                'job_stop_time': self.stop_time,
+                'job_duration': self.duration,
+                'step_count_total': len(self.steps),
+                'step_count_completed': len(self.completed),
+                'step_count_failed': len(self.failed),
+                'step_count_canceled': len(self.get_canceled_steps()),
+                'step_count_aborted': len(self.get_aborted_steps()),
+                'steps_completed': self.completed,
+                'steps_failed': self.failed,
+                'steps_canceled': self.get_canceled_steps(),
+                'steps': self.steps
+                }
+        with open(self.log_path_json, "w") as log_file:
+            json.dump(log_data, log_file, indent=4, sort_keys=True, default=str)
+
     def send_mail(self, mail_to, mail_from, mail_subject, mail_body):
         COMMASPACE = ', '
         recipients = mail_to.split(",")
@@ -785,7 +842,7 @@ class Job(object):
         msg['From'] = self.MAIL_FROM
         msg['To'] = COMMASPACE.join(recipients)
 
-        results = self.print_results(True, True)
+        results = self.print_results(True, False)
         mail_body = ''
            
         for line in results['summary']:

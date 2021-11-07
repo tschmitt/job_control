@@ -87,6 +87,8 @@ CHANGES
                                                 Added --extras_file parameter and handling.
     20191031    cameron.ezell@clearcapital.com  Updated to make compatible with Python 3
     20201120    cameron.ezell@clearcapital.com  Replace optparse with argparse
+    20211106    tschmitt@schmittworks.com       Added JSON log output
+                                                Colorized the output a bit
 
 """
 from __future__ import print_function
@@ -142,8 +144,9 @@ def main ():
     job.stop_time = datetime.today()
     job.duration = job.stop_time-job.start_time
     job.save()
+    job.save_log()
     print(job.start_time.strftime("%Y-%m-%d %H:%M:%S"), 'JOB COMPLETE')
-    job.print_results(True, False)
+    job.print_results(True, True)
 
     #Send the email summary on failure or if desired
     if not job.is_success() or (options.send_success_email and job.is_success()):
@@ -166,7 +169,7 @@ def sigint_handler(signal, frame):
     '''
     print('***** The job was canceled via SIGINT *****')
     job.cancel()
-    job.print_results(True, False)
+    job.print_results(True, True)
     job.send_summary_mail()
     print('***** The job was canceled via SIGINT *****')
     sys.exit(2)
